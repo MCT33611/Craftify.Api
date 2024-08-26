@@ -26,10 +26,10 @@ jobs:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
     - name: Ensure destination directory exists
-      run: ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.HOST_DNS }} 'mkdir -p ~/var/www/craftify/Craftify.Api'
+      run: ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.HOST_DNS }} 'mkdir -p ~/var/www/craftify/Craftify.Api/publish'
 
     - name: Copy files via rsync
-      run: rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./publish/ ec2-user@${{ secrets.HOST_DNS }}:~/var/www/craftify/Craftify.Api/
+      run: rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./publish/ ec2-user@${{ secrets.HOST_DNS }}:~/var/www/craftify/Craftify.Api/publish/
 
     - name: Check service configuration
       run: |
