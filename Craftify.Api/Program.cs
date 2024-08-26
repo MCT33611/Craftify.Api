@@ -41,8 +41,4 @@ var app = builder.Build();
 }
 
 //ready to publish :)
-//testing : 
-//try one
-//try two
-//try three
-//try six
+
