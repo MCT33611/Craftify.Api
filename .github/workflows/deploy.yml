@@ -14,11 +14,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    # Step 2: Set up .NET Core SDK
-    - name: Set up .NET Core
+    # Step 2: Set up .NET  SDK
+    - name: Set up .NET 
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '8.0.x' # Use the correct version of .NET Core
+        dotnet-version: '8.0.x' 
 
     # Step 3: Build the .NET application
     - name: Build the application
