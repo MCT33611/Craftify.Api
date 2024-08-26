@@ -14,30 +14,36 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    # Step 2: Set up SSH to communicate with your EC2 instance
+    # Step 2: Set up .NET Core SDK
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '8.0.x' # Use the correct version of .NET Core
+
+    # Step 3: Build the .NET application
+    - name: Build the application
+      run: |
+        dotnet restore
+        dotnet publish -c Release -o ./publish
+
+    # Step 4: Set up SSH to communicate with your EC2 instance
     - name: Set up SSH
       uses: webfactory/ssh-agent@v0.5.3
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    # Step 3: Copy the built files to the EC2 instance
+    # Step 5: Copy the built files to the EC2 instance
     - name: Copy files via SCP
       run: |
         scp -r -o StrictHostKeyChecking=no ./publish/* ec2-user@${{ secrets.HOST_DNS }}:${{ secrets.TARGET_DIR }}
 
-    # Step 4: Build, publish, and restart the .NET application on EC2
+    # Step 6: Build, publish, and restart the .NET application on EC2
     - name: Publish and restart API
       run: |
         ssh ec2-user@${{ secrets.HOST_DNS }} << 'EOF'
           # Navigate to the directory where the application is deployed
           cd ${{ secrets.TARGET_DIR }}
           
-          # Pull the latest code (ensure you have Git setup in the directory)
-          git pull origin main
-
-          # Build and publish the .NET application
-          dotnet publish -c Release -o /var/www/craftify/Craftify.Api/publish
-
           # Restart the API service (ensure you have a systemd service set up)
           sudo systemctl restart craftify-api-service
           
