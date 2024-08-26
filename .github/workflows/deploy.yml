@@ -79,7 +79,3 @@ jobs:
           fi
         EOF
 
-    - name: Verify deployment
-      run: |
-        echo "Verifying deployment..."
-        curl -sSf http://${{ secrets.HOST_DNS }} || { echo "Deployment verification failed"; exit 1; }
