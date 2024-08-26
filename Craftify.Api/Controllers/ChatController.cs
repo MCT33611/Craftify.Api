@@ -25,6 +25,7 @@ using Microsoft.AspNetCore.Cors;
 namespace Craftify.Api.Controllers
 {
     [Route("api/chat")]
+    [Authorize]
     [ApiController]
     public class ChatController : ApiController
     {
