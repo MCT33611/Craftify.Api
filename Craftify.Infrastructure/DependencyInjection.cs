@@ -62,6 +62,12 @@ namespace Craftify.Infrastructure
         {
             var jwtSettings = new JwtSettings();
             _config.Bind(JwtSettings.SectionName, jwtSettings);
+
+            if (string.IsNullOrEmpty(jwtSettings.Secret))
+            {
+                throw new ArgumentNullException(nameof(jwtSettings.Secret), "JWT Secret is not configured.");
+            }
+
             services.AddSingleton(Options.Create(jwtSettings));
             services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
