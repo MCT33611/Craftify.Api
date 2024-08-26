@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - '*'
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -31,44 +32,32 @@ jobs:
     - name: Copy files via rsync
       run: rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./publish/ ec2-user@${{ secrets.HOST_DNS }}:~/var/www/craftify/Craftify.Api/publish/
 
-    - name: Check service configuration
-      run: |
-        ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.HOST_DNS }} << 'EOF'
-          echo "Checking service file..."
-          sudo cat /etc/systemd/system/craftify-api-service.service
-          
-          echo "Checking file permissions..."
-          ls -l ~/var/www/craftify/Craftify.Api/
-          
-          echo "Checking SELinux status..."
-          sestatus
-        EOF
-
-    - name: Publish and restart API
+    - name: Deploy and run the API
       run: |
         ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.HOST_DNS }} << 'EOF'
           set -e
           echo "Navigating to target directory..."
-          cd ~/var/www/craftify/Craftify.Api/
-          
-          echo "Stopping the current API service..."
-          sudo systemctl stop craftify-api-service || echo "No running service found."
-          
-          echo "Starting the API service..."
-          sudo systemctl start craftify-api-service
-          
-          echo "Checking API service status..."
-          if ! sudo systemctl is-active --quiet craftify-api-service; then
-            echo "Failed to start API service. Checking logs..."
-            sudo journalctl -u craftify-api-service -n 50 --no-pager
+          cd ~/var/www/craftify/Craftify.Api/publish/
+
+          echo "Killing any running instance of the API..."
+          pkill -f 'dotnet Craftify.Api.dll' || echo "No running instance found."
+
+          echo "Starting the new instance of the API..."
+          nohup dotnet Craftify.Api.dll > ~/var/www/craftify/Craftify.Api/publish/logs.txt 2>&1 &
+
+          echo "Checking if the API started successfully..."
+          sleep 5
+          if ! pgrep -f 'dotnet Craftify.Api.dll' > /dev/null; then
+            echo "Failed to start API. Checking logs..."
+            cat ~/var/www/craftify/Craftify.Api/publish/logs.txt
             exit 1
           else
-            echo "API service started successfully"
+            echo "API started successfully"
           fi
-          
-          echo "Restarting Nginx to ensure it picks up any changes..."
+
+          echo "Restarting Nginx to apply any changes..."
           sudo systemctl restart nginx
-          
+
           echo "Checking Nginx status..."
           if ! sudo systemctl is-active --quiet nginx; then
             echo "Failed to restart Nginx. Checking logs..."
@@ -78,4 +67,3 @@ jobs:
             echo "Nginx restarted successfully"
           fi
         EOF
-
