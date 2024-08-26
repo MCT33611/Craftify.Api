@@ -14,11 +14,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    # Step 2: Set up .NET  SDK
-    - name: Set up .NET 
+    # Step 2: Set up .NET SDK
+    - name: Set up .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '8.0.x' 
+        dotnet-version: '8.0.x'
 
     # Step 3: Build the .NET application
     - name: Build the application
@@ -35,18 +35,21 @@ jobs:
     # Step 5: Copy the built files to the EC2 instance
     - name: Copy files via SCP
       run: |
-        scp -r -o StrictHostKeyChecking=no ./publish/* ec2-user@44.201.169.65:~/var/www/craftify/Craftify.Api/
-
-    # Step 6: Build, publish, and restart the .NET application on EC2
+        scp -rv -o StrictHostKeyChecking=no ./publish/* ec2-user@${{ secrets.HOST_DNS }}:~/var/www/craftify/Craftify.Api/
+      
+    # Step 6: Publish and restart the .NET application on EC2
     - name: Publish and restart API
       run: |
         ssh ec2-user@${{ secrets.HOST_DNS }} << 'EOF'
-          # Navigate to the directory where the application is deployed
-          cd ${{ secrets.TARGET_DIR }}
+          echo "Navigating to target directory..."
+          cd ~/var/www/craftify/Craftify.Api/
           
-          # Restart the API service (ensure you have a systemd service set up)
-          sudo systemctl restart craftify-api-service
-          
-          # Restart Nginx to ensure it picks up any changes
+          echo "Stopping the current API service..."
+          sudo systemctl stop craftify-api-service || echo "No running service found."
+
+          echo "Starting the API service..."
+          sudo systemctl start craftify-api-service
+
+          echo "Restarting Nginx to ensure it picks up any changes..."
           sudo systemctl restart nginx
         EOF
