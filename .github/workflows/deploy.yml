@@ -26,27 +26,33 @@ jobs:
     - name: Copy files via rsync
       run: rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./publish/ ec2-user@${{ secrets.HOST_DNS }}:~/var/www/craftify/Craftify.Api/
     - name: Publish and restart API
-      run: |
-        ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.HOST_DNS }} << 'EOF'
-          set -e
-          echo "Navigating to target directory..."
-          cd ~/var/www/craftify/Craftify.Api/
-          
-          echo "Stopping the current API service..."
-          sudo systemctl stop craftify-api-service || echo "No running service found."
-          
-          echo "Starting the API service..."
-          sudo systemctl start craftify-api-service
-          
-          echo "Checking API service status..."
-          sudo systemctl is-active --quiet craftify-api-service && echo "API service started successfully" || { echo "Failed to start API service"; exit 1; }
-          
-          echo "Restarting Nginx to ensure it picks up any changes..."
-          sudo systemctl restart nginx
-          
-          echo "Checking Nginx status..."
-          sudo systemctl is-active --quiet nginx && echo "Nginx restarted successfully" || { echo "Failed to restart Nginx"; exit 1; }
-        EOF
+  run: |
+    ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.HOST_DNS }} << 'EOF'
+      set -e
+      echo "Navigating to target directory..."
+      cd ~/var/www/craftify/Craftify.Api/
+      
+      echo "Stopping the current API service..."
+      sudo systemctl stop craftify-api-service || echo "No running service found."
+      
+      echo "Starting the API service..."
+      sudo systemctl start craftify-api-service
+      
+      echo "Checking API service status..."
+      if ! sudo systemctl is-active --quiet craftify-api-service; then
+        echo "Failed to start API service. Checking logs..."
+        sudo journalctl -u craftify-api-service -n 50 --no-pager
+        exit 1
+      else
+        echo "API service started successfully"
+      fi
+      
+      echo "Restarting Nginx to ensure it picks up any changes..."
+      sudo systemctl restart nginx
+      
+      echo "Checking Nginx status..."
+      sudo systemctl is-active --quiet nginx && echo "Nginx restarted successfully" || { echo "Failed to restart Nginx"; exit 1; }
+    EOF
     - name: Verify deployment
       run: |
         echo "Verifying deployment..."
