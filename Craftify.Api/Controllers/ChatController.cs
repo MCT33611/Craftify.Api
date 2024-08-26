@@ -20,11 +20,13 @@ using System.IdentityModel.Tokens.Jwt;
 using Craftify.Application.Chat.Queries.GetConversationByRoomId;
 using System.Security.Claims;
 using Craftify.Application.Chat.Commands.UploadMedia;
+using Microsoft.AspNetCore.Cors;
 
 namespace Craftify.Api.Controllers
 {
     [Route("api/chat")]
     [ApiController]
+    [EnableCors]
     public class ChatController : ApiController
     {
         private readonly ISender _mediator;
