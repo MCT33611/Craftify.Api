@@ -1,55 +1,53 @@
 name: Deploy to EC2
-
 on:
   push:
     branches:
       - '*'
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-    # Step 1: Checkout the code from the repository
     - name: Checkout code
       uses: actions/checkout@v2
-
-    # Step 2: Set up .NET SDK
     - name: Set up .NET
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '8.0.x'
-
-    # Step 3: Build the .NET application
     - name: Build the application
       run: |
         dotnet restore
         dotnet publish -c Release -o ./publish
-
-    # Step 4: Set up SSH to communicate with your EC2 instance
     - name: Set up SSH
       uses: webfactory/ssh-agent@v0.5.3
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-    # Step 5: Copy the built files to the EC2 instance
-    - name: Copy files via SCP
-      run: |
-        scp -rv -o StrictHostKeyChecking=no ./publish/* ec2-user@${{ secrets.HOST_DNS }}:~/var/www/craftify/Craftify.Api/
-      
-    # Step 6: Publish and restart the .NET application on EC2
+    - name: Ensure destination directory exists
+      run: ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.HOST_DNS }} 'mkdir -p ~/var/www/craftify/Craftify.Api'
+    - name: Copy files via rsync
+      run: rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./publish/ ec2-user@${{ secrets.HOST_DNS }}:~/var/www/craftify/Craftify.Api/
     - name: Publish and restart API
       run: |
-        ssh ec2-user@${{ secrets.HOST_DNS }} << 'EOF'
+        ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.HOST_DNS }} << 'EOF'
+          set -e
           echo "Navigating to target directory..."
           cd ~/var/www/craftify/Craftify.Api/
           
           echo "Stopping the current API service..."
           sudo systemctl stop craftify-api-service || echo "No running service found."
-
+          
           echo "Starting the API service..."
           sudo systemctl start craftify-api-service
-
+          
+          echo "Checking API service status..."
+          sudo systemctl is-active --quiet craftify-api-service && echo "API service started successfully" || { echo "Failed to start API service"; exit 1; }
+          
           echo "Restarting Nginx to ensure it picks up any changes..."
           sudo systemctl restart nginx
+          
+          echo "Checking Nginx status..."
+          sudo systemctl is-active --quiet nginx && echo "Nginx restarted successfully" || { echo "Failed to restart Nginx"; exit 1; }
         EOF
+    - name: Verify deployment
+      run: |
+        echo "Verifying deployment..."
+        curl -sSf http://${{ secrets.HOST_DNS }} || { echo "Deployment verification failed"; exit 1; }
