@@ -26,7 +26,6 @@ namespace Craftify.Api.Controllers
 {
     [Route("api/chat")]
     [ApiController]
-    [EnableCors]
     public class ChatController : ApiController
     {
         private readonly ISender _mediator;
