@@ -10,31 +10,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # Step 1: Checkout the code from the repository
     - name: Checkout code
       uses: actions/checkout@v2
 
+    # Step 2: Set up SSH to communicate with your EC2 instance
     - name: Set up SSH
       uses: webfactory/ssh-agent@v0.5.3
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+    # Step 3: Copy the built files to the EC2 instance
     - name: Copy files via SCP
       run: |
         scp -r -o StrictHostKeyChecking=no ./publish/* ec2-user@${{ secrets.HOST_DNS }}:${{ secrets.TARGET_DIR }}
 
+    # Step 4: Build, publish, and restart the .NET application on EC2
     - name: Publish and restart API
       run: |
         ssh ec2-user@${{ secrets.HOST_DNS }} << 'EOF'
-
-
           # Navigate to the directory where the application is deployed
-          cd ${TARGET_DIR}
+          cd ${{ secrets.TARGET_DIR }}
           
-          
-          # Ensure the application is built and published
-          dotnet publish -c Release -o ${TARGET_DIR}/publish
-          
-          # Restart the API service 
+          # Pull the latest code (ensure you have Git setup in the directory)
+          git pull origin main
+
+          # Build and publish the .NET application
+          dotnet publish -c Release -o /var/www/craftify/Craftify.Api/publish
+
+          # Restart the API service (ensure you have a systemd service set up)
           sudo systemctl restart craftify-api-service
           
           # Restart Nginx to ensure it picks up any changes
