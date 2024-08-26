@@ -37,6 +37,12 @@ jobs:
         ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.HOST_DNS }} << 'EOF'
           set -e
           echo "Navigating to target directory..."
+          cd ~/var/www/craftify/Craftify.Api/
+
+          echo "Updating Code in EC2 intence from git"
+          git pull
+          
+          echo "Navigating to publish dir"
           cd ~/var/www/craftify/Craftify.Api/publish/
 
           echo "Killing any running instance of the API..."
