@@ -29,9 +29,6 @@ jobs:
 
           # Navigate to the directory where the application is deployed
           cd ${TARGET_DIR}
-
-          #Updating code form git
-          git pull
           
           
           # Ensure the application is built and published
