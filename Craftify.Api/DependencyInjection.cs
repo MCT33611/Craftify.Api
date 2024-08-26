@@ -1,5 +1,6 @@
 ﻿using Craftify.Api.Filters;
 using Craftify.Api.Mapping;
+using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 
@@ -46,12 +47,14 @@ namespace Craftify.Infrastructure
                 });
 
             });
+            var allowedOrigins = configuration.GetSection("AllowedOrigins").Get<string[]>();
+
             services.AddCors(options =>
             {
                 options.AddDefaultPolicy(builder =>
                 {
                     builder
-                    .SetIsOriginAllowed(origin => true)
+                    .WithOrigins(allowedOrigins) // Use the allowed origins here
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials();
