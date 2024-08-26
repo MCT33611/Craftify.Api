@@ -20,19 +20,19 @@ jobs:
 
     - name: Copy files via SCP
       run: |
-        scp -r -o StrictHostKeyChecking=no ./publish/* ec2-user@44.201.169.65:/var/www/craftify/Craftify.Api
+        scp -r -o StrictHostKeyChecking=no ./publish/* ec2-user@${{ secrets.HOST_DNS }}:${{ secrets.TARGET_DIR }}
 
     - name: Publish and restart API
       run: |
-        ssh ec2-user@44.201.169.65 << 'EOF'
+        ssh ec2-user@${{ secrets.HOST_DNS }} << 'EOF'
           # Navigate to the directory where the application is deployed
-          cd /var/www/craftify/Craftify.Api
+          cd ${TARGET_DIR}
           
           # Ensure the application is built and published
-          dotnet publish -c Release -o /var/www/craftify/Craftify.Api/publish
+          dotnet publish -c Release -o ${TARGET_DIR}/publish
           
-          # Restart the API service (assuming you have a service setup for your API)
-          sudo systemctl restart my-api-service
+          # Restart the API service 
+          sudo systemctl restart craftify-api-service
           
           # Restart Nginx to ensure it picks up any changes
           sudo systemctl restart nginx
