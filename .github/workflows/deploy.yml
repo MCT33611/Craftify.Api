@@ -35,7 +35,7 @@ jobs:
     # Step 5: Copy the built files to the EC2 instance
     - name: Copy files via SCP
       run: |
-        scp -r -o StrictHostKeyChecking=no ./publish/* ec2-user@${{ secrets.HOST_DNS }}:${{ secrets.TARGET_DIR }}
+        scp -r -o StrictHostKeyChecking=no ./publish/* ec2-user@<44.201.169.65>:~/var/www/craftify/Craftify.Api/
 
     # Step 6: Build, publish, and restart the .NET application on EC2
     - name: Publish and restart API
