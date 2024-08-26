@@ -25,8 +25,14 @@ jobs:
     - name: Publish and restart API
       run: |
         ssh ec2-user@${{ secrets.HOST_DNS }} << 'EOF'
+
+
           # Navigate to the directory where the application is deployed
           cd ${TARGET_DIR}
+
+          #Updating code form git
+          git pull
+          
           
           # Ensure the application is built and published
           dotnet publish -c Release -o ${TARGET_DIR}/publish
